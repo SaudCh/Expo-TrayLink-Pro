@@ -53,10 +53,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setToken(null);
     setUser({});
-    navigation.reset({
-      index: 0,
-      routes: [{ name: screens.auth }],
-    });
+
     // setUser({});
     // setToken(null);
     // setRole(null);
