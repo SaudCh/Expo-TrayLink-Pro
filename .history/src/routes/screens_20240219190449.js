@@ -1,0 +1,38 @@
+export const screens = {
+  splash: "SplashScreen",
+  login: "LoginScreen",
+  signup: "SignupScreen",
+  forgetPass: "ForgetPasswordScreen",
+  //
+  client: "ClientStack",
+  home: "HomeScreen",
+  chat: "ChatScreen",
+  profile: "ProfileScreen",
+  //
+  notifications: "NotificationsScreen",
+  search: "SearchScreen",
+  searchResult: "SearchResultScreen",
+  coachReview: "CoachReviewScreen",
+  sessionDetail: "SessionDetailScreen",
+  coachProfile: "CoachProfileScreen",
+  bookSession: "BookSessionScreen",
+  //
+  messagesScreen: "MessagesScreen",
+  //
+  profileDetail: "ProfileDetailScreen",
+  subscription: "SubscriptionScreen",
+  boost: "BoostScreen",
+  paymentMethod: "PaymentMethodScreen",
+  addPayment: "AddPaymentScreen",
+  notificationSetting: "NotificationSettingScreen",
+  yourReview: "YourReviewScreen",
+  aim: "AimScreen",
+  manageSession: "ManageSessionScreen",
+  addStory: "AddStoryScreen",
+  connectedPeopleStack: "ConnectedPeopleStack",
+  myfollowings: "MyFollowingsScreen",
+  myfollowers: "MyFollowersScreen",
+  editProfile: "EditProfileScreen",
+  updatePassword: "UpdatePasswordScreen",
+  calendar: "CalendarScreen",
+};
