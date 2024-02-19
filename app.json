@@ -9,7 +9,7 @@
     "splash": {
       "image": "./src/assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#42125E"
+      "backgroundColor": "#29B6F6"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,17 +26,13 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
-        "backgroundColor": "#42125E"
+        "backgroundColor": "#29B6F6"
       }
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "69401b0b-edad-4a7b-b5e7-321902b320ef"
-      }
-    },
+   
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -48,18 +44,6 @@
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
-        }
-      ],
-      [
-        "expo-document-picker",
-        {
-          "iCloudContainerEnvironment": "Production"
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Coach And Client to use your location."
         }
       ]
     ]

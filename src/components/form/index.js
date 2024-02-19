@@ -5,12 +5,9 @@ import {
   CheckBoxInput,
   IncCounter,
   ButtonInput,
-  ImagesInput,
-  FilesInput,
   Label,
 } from "./input";
 import AvatarInput from "./avatar";
-import ViewFiles from "./viewFiles";
 
 export {
   TextInput,
@@ -18,10 +15,7 @@ export {
   CheckBoxInput,
   IncCounter,
   ButtonInput,
-  ImagesInput,
-  FilesInput,
   Label,
   TimeDatePicker,
   AvatarInput,
-  ViewFiles,
 };

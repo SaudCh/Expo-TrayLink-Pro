@@ -1,6 +1,5 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { DefaultTheme, PaperProvider } from "react-native-paper";
-import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import * as React from "react";
@@ -20,15 +19,13 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ActionSheetProvider>
-        <PaperProvider theme={theme}>
-          <NavigationContainer>
-            <AuthProvider>
-              <AppNavigation />
-            </AuthProvider>
-          </NavigationContainer>
-        </PaperProvider>
-      </ActionSheetProvider>
+      <PaperProvider theme={theme}>
+        <NavigationContainer>
+          <AuthProvider>
+            <AppNavigation />
+          </AuthProvider>
+        </NavigationContainer>
+      </PaperProvider>
     </GestureHandlerRootView>
   );
 }
