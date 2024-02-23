@@ -8,13 +8,16 @@ import SplashScreen from "../../screens/splash";
 import LoginScreen from "../../screens/auth/login";
 import SignupScreen from "../../screens/auth/signup";
 import ForgetPasswordScreen from "../../screens/auth/forgetPassword";
+import { useAuth } from "../../hooks";
 
 const Stack = createNativeStackNavigator();
 
 function AuthRoutes() {
+  const { appLoaded } = useAuth();
+
   return (
     <Stack.Navigator
-      initialRouteName={screens.splash}
+      initialRouteName={appLoaded ? screens.login : screens.splash}
       screenOptions={{
         headerShown: false,
       }}

@@ -9,17 +9,25 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 
 import Container from "../../components/container";
 import Header from "../../components/header";
 import { colors } from "../../constants";
 import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
+import { useAuth, useFirebase } from "../../hooks";
 
 export default function FacilityScreen({ navigation }) {
+  const { team, profile } = useAuth();
+  const { getDocuments } = useFirebase();
   const [search, setSearch] = React.useState("");
-  const [teams, setTeams] = React.useState(TEAMS);
+  const [teams, setTeams] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+
+  useEffect(() => {
+    getFacilities();
+  }, []);
 
   const filterData = useMemo(() => {
     return teams.filter((item) => {
@@ -36,22 +44,35 @@ export default function FacilityScreen({ navigation }) {
     setTeams(newData);
   };
 
+  const getFacilities = async () => {
+    await getDocuments("facilities", setLoading).then((res) => {
+      if (res?.error) return Alert.alert("Error", res.error);
+      setTeams(res.data);
+    });
+  };
+
   return (
     <Container>
       <Header
-        title={"My Team"}
+        title={team?.name}
         back={false}
-        headerRight={() => (
-          <TouchableOpacity
-            onPress={() => navigation.navigate(screens.addTeam)}
-          >
-            <Text
-              style={{ fontSize: 16, color: colors.secondary, marginRight: 10 }}
+        headerRight={() =>
+          profile?.role === "leader" ? (
+            <TouchableOpacity
+              onPress={() => navigation.navigate(screens.addTeam)}
             >
-              Add
-            </Text>
-          </TouchableOpacity>
-        )}
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: colors.secondary,
+                  marginRight: 10,
+                }}
+              >
+                Add
+              </Text>
+            </TouchableOpacity>
+          ) : null
+        }
       />
 
       <SearchBar

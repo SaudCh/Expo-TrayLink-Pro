@@ -8,8 +8,11 @@ import Header from "../../components/header";
 import { getAvatarUrl } from "../../utils";
 import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
+import { useAuth } from "../../hooks";
 
 export default function ProfileDetailScreen({ navigation }) {
+  const { profile } = useAuth();
+
   return (
     <Container>
       <Header title={"Profile"} back={false} />
@@ -24,10 +27,11 @@ export default function ProfileDetailScreen({ navigation }) {
         }}
       >
         <Image
-          source={getAvatarUrl("")}
+          source={getAvatarUrl(profile?.avatar)}
           style={{
             width: 100,
             height: 100,
+            borderRadius: 50,
           }}
         />
       </View>
@@ -39,7 +43,7 @@ export default function ProfileDetailScreen({ navigation }) {
           textAlign: "center",
         }}
       >
-        John Doe
+        {profile?.name}
       </Text>
       <Text
         style={{
@@ -48,7 +52,7 @@ export default function ProfileDetailScreen({ navigation }) {
           textAlign: "center",
         }}
       >
-        @johndoe
+        @{profile?.teamName}
       </Text>
 
       {/* email, phone number */}
@@ -72,7 +76,7 @@ export default function ProfileDetailScreen({ navigation }) {
             fontSize: 16,
           }}
         >
-          chris@gmail.com
+          {profile?.email}
         </Text>
       </View>
       <View
@@ -95,7 +99,7 @@ export default function ProfileDetailScreen({ navigation }) {
             fontSize: 16,
           }}
         >
-          1234567890
+          {profile?.phone}
         </Text>
       </View>
 

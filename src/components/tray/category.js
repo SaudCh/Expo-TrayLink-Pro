@@ -1,15 +1,74 @@
 import { Feather } from "@expo/vector-icons";
 
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import React from "react";
 
 import Modalize from "../modalize";
 import { colors } from "../../constants";
+import { useAuth, useFirebase } from "../../hooks";
 
-export default function CategoryModal({ mdlRef, onPress, selected }) {
+export default function CategoryModal({
+  mdlRef,
+  onPress,
+  selected,
+  categories,
+  getCategories,
+}) {
+  const { addDocument, updateDocument, deleteDocument } = useFirebase();
+  const { team } = useAuth();
+  const [loading, setLoading] = React.useState(false);
+
+  const editCategory = async (id, name) => {
+    if (!name) return Alert.alert("Error", "Category name is required");
+
+    const res = await updateDocument(
+      "categories",
+      id,
+      { name: name },
+      setLoading
+    );
+    if (res?.error) return Alert.alert("Error", res.error);
+    setLoading(true);
+    await getCategories();
+    setLoading(false);
+  };
+
+  const addCategory = async (name) => {
+    if (!name) return Alert.alert("Error", "Category name is required");
+
+    const res = await addDocument(
+      "categories",
+      {
+        name: name,
+        teamId: team.id,
+      },
+      setLoading
+    );
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    setLoading(true);
+    await getCategories();
+    setLoading(false);
+  };
+
+  const deleteCategory = async (id) => {
+    const res = await deleteDocument("categories", id, setLoading);
+    if (res?.error) return Alert.alert("Error", res.error);
+    setLoading(true);
+    await getCategories();
+    setLoading(false);
+  };
+
   return (
     <Modalize bsref={mdlRef}>
-      {CATEGORIES.map((item, index) => (
+      {categories.map((item, index) => (
         <TouchableOpacity
           style={{
             flexDirection: "row",
@@ -18,11 +77,10 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
             paddingVertical: 15,
             borderBottomWidth: 1,
             borderBottomColor: colors.lightGrey,
-            backgroundColor:
-              selected === item.item ? colors.lightGrey : "white",
+            backgroundColor: selected === item.id ? colors.lightGrey : "white",
           }}
           onPress={() => {
-            onPress(item.item);
+            onPress(item.id);
           }}
           key={index}
         >
@@ -34,7 +92,7 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
               flex: 1,
             }}
           >
-            {item.item}
+            {item.name}
           </Text>
           <TouchableOpacity
             onPress={() => {
@@ -50,12 +108,12 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
                   {
                     text: "OK",
                     onPress: (text) => {
-                      console.log({ text });
+                      editCategory(item.id, text);
                     },
                   },
                 ],
                 "plain-text",
-                item.item
+                item.name
               );
             }}
             style={{ marginRight: 10 }}
@@ -74,7 +132,9 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
                   },
                   {
                     text: "Yes",
-                    onPress: () => {},
+                    onPress: () => {
+                      deleteCategory(item.id);
+                    },
                   },
                 ]
               );
@@ -89,6 +149,9 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
           padding: 10,
           paddingVertical: 15,
           backgroundColor: "white",
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
         }}
         onPress={() => {
           Alert.prompt(
@@ -103,7 +166,7 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
               {
                 text: "OK",
                 onPress: (text) => {
-                  console.log({ text });
+                  addCategory(text);
                 },
               },
             ],
@@ -111,12 +174,14 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
           );
         }}
       >
+        {loading && <ActivityIndicator size="small" color={colors.primary} />}
         <Text
           style={{
             fontSize: 14,
             fontWeight: "500",
             color: colors.primary,
             textAlign: "center",
+            marginLeft: 5,
           }}
         >
           Add New Category
@@ -128,18 +193,3 @@ export default function CategoryModal({ mdlRef, onPress, selected }) {
 }
 
 const styles = StyleSheet.create({});
-
-const CATEGORIES = [
-  { item: "Knee" },
-  { item: "Hip" },
-  { item: "Trauma" },
-  { item: "Spine" },
-  { item: "Cranial" },
-  { item: "Maxillofacial" },
-  { item: "Neurosurgery" },
-  { item: "Cardiothoracic" },
-  { item: "Vascular" },
-  { item: "Orthopedic" },
-  { item: "Plastic" },
-  { item: "General" },
-];

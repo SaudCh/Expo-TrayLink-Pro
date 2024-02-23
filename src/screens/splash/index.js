@@ -9,10 +9,14 @@ import React, { useEffect } from "react";
 
 import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../../config/firebase";
+import { useAuth } from "../../hooks";
 
 export default function SplashScreen({ navigation }) {
   const opacity = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(0)).current;
+  const { login, setAppLoaded } = useAuth();
 
   useEffect(() => {
     Animated.parallel([
@@ -30,9 +34,21 @@ export default function SplashScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
-      navigation.replace(screens.login);
-    }, 1500);
+    console.log("Splash Screen");
+    const sub = onAuthStateChanged(auth, (user) => {
+      console.log("splash user");
+      if (user) {
+        login(user);
+        setAppLoaded(true);
+      } else {
+        setTimeout(() => {
+          navigation.replace(screens.login);
+          setAppLoaded(true);
+        }, 2000);
+      }
+    });
+
+    return () => sub();
   }, []);
 
   return (

@@ -1,24 +1,51 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { auth, db } from "../config/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export const AuthContext = React.createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = React.useState({});
-  const [role, setRole] = React.useState(null);
-  const [profile, setProfile] = React.useState(null);
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  // const { getDocumentById } = useFirebase();
+  const [appLoaded, setAppLoaded] = React.useState(false);
 
-  const login = async (token, user) => {
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [user, setUser] = React.useState({});
+  const [profile, setProfile] = React.useState(null);
+  const [team, setTeam] = React.useState(null);
+
+  const login = async (user) => {
     setIsLoggedIn(true);
     setUser(user);
+
+    await getProfile(user.uid);
   };
 
   const logout = async () => {
     setIsLoggedIn(false);
-    setUser({});
+    setUser(null);
   };
 
-  const getProfile = async () => {};
+  const getProfile = async (uid) => {
+    try {
+      const profileRef = await getDoc(doc(db, "users", uid));
+      const profileData = profileRef.data();
+
+      setProfile({
+        ...profileData,
+        id: profileRef.id,
+      });
+
+      const teamRef = await getDoc(doc(db, "teams", profileData.teamId));
+      const teamData = teamRef.data();
+
+      setTeam({
+        ...teamData,
+        id: teamRef.id,
+      });
+    } catch (error) {
+      console.error("Error getting profile: ", error);
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -28,8 +55,10 @@ export const AuthProvider = ({ children }) => {
         logout,
         user,
         profile,
-        role,
         getProfile,
+        appLoaded,
+        setAppLoaded,
+        team,
       }}
     >
       {children}

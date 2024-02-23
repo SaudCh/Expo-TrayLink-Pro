@@ -1,20 +1,24 @@
 import { Button } from "react-native-paper";
 
-import { StyleSheet, View } from "react-native";
-import React from "react";
+import { Alert, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
 
-import { colors } from "../../constants";
 import Header from "../../components/header";
 import { ButtonInput, TextInput } from "../../components/form";
 import CategoryModal from "../../components/tray/category";
 import TypeModal from "../../components/tray/type";
 import Container from "../../components/container";
 import FacilityModal from "../../components/tray/facility";
+import { useAuth, useFirebase } from "../../hooks";
+import { where } from "firebase/firestore";
 
-export default function AddTeamScreen({ navigation }) {
+export default function AddTrayScreen({ navigation }) {
   const categoryRef = React.useRef();
   const typeRef = React.useRef();
   const facilityRef = React.useRef();
+
+  const { getDocuments, addDocument, getReferece } = useFirebase();
+  const { team } = useAuth();
 
   const [data, setData] = React.useState({
     email: "",
@@ -27,12 +31,77 @@ export default function AddTeamScreen({ navigation }) {
   const [errors, setErrors] = React.useState({});
 
   const [loading, setLoading] = React.useState(false);
+  const [categories, setCategories] = React.useState([]);
+  const [types, setTypes] = React.useState([]);
+  const [facilities, setFacilities] = React.useState([]);
+
+  useEffect(() => {
+    getCategories();
+    getFacilities();
+  }, []);
+
+  useEffect(() => {
+    if (data.category) getTypes();
+  }, [data.category]);
 
   const handleSubmit = async () => {
     const error = validateData(data);
 
     setErrors(error);
     if (Object.keys(error).length > 0) return;
+
+    const res = await addDocument(
+      "trays",
+      {
+        ...data,
+        categoryRef: getReferece("categories", data.category),
+        typeRef: getReferece("types", data.type),
+        facilityRef: data.facility
+          ? getReferece("facilities", data.facility)
+          : "",
+        teamId: team.id,
+      },
+      setLoading
+    );
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    Alert.alert("Success", "Tray added successfully");
+    clearData();
+  };
+
+  const getCategories = async () => {
+    const res = await getDocuments("categories", setLoading, [
+      where("teamId", "==", team.id),
+    ]);
+    if (res?.error) return Alert.alert("Error", res.error);
+    setCategories(res.data);
+  };
+
+  const getTypes = async () => {
+    const res = await getDocuments("types", setLoading, [
+      where("category", "==", data.category),
+    ]);
+    if (res?.error) return Alert.alert("Error", res.error);
+    setTypes(res.data);
+  };
+
+  const getFacilities = async () => {
+    const res = await getDocuments("facilities", setLoading, [
+      where("teamId", "==", team.id),
+    ]);
+    if (res?.error) return Alert.alert("Error", res.error);
+    setFacilities(res.data);
+  };
+
+  const clearData = () => {
+    setData({
+      email: "",
+      number: "",
+      category: "",
+      type: "",
+      facility: "",
+    });
   };
 
   return (
@@ -58,7 +127,7 @@ export default function AddTeamScreen({ navigation }) {
 
         <ButtonInput
           label="Category"
-          value={data.category}
+          value={categories.find((item) => item.id === data.category)?.name}
           error={errors.category}
           onPress={() => {
             categoryRef.current.open();
@@ -68,7 +137,7 @@ export default function AddTeamScreen({ navigation }) {
         {data.category && (
           <ButtonInput
             label="Type"
-            value={data.type}
+            value={types.find((item) => item.id === data.type)?.name}
             error={errors.type}
             onPress={() => {
               typeRef.current.open();
@@ -78,7 +147,7 @@ export default function AddTeamScreen({ navigation }) {
 
         <ButtonInput
           label="Facility"
-          value={data.facility}
+          value={facilities.find((item) => item.id === data.facility)?.name}
           error={errors.facility}
           onPress={() => {
             facilityRef.current.open();
@@ -104,9 +173,13 @@ export default function AddTeamScreen({ navigation }) {
         mdlRef={categoryRef}
         selected={data.category}
         onPress={(item) => {
-          setData({ ...data, category: item });
+          const type = item === data.category ? data.type : "";
+          setData({ ...data, category: item, type });
+
           categoryRef.current.close();
         }}
+        categories={categories}
+        getCategories={getCategories}
       />
       <TypeModal
         mdlRef={typeRef}
@@ -115,6 +188,9 @@ export default function AddTeamScreen({ navigation }) {
           setData({ ...data, type: item });
           typeRef.current.close();
         }}
+        types={types}
+        getTypes={getTypes}
+        category={data.category}
       />
       <FacilityModal
         mdlRef={facilityRef}
@@ -123,6 +199,7 @@ export default function AddTeamScreen({ navigation }) {
           setData({ ...data, facility: item });
           facilityRef.current.close();
         }}
+        facilities={facilities}
       />
     </Container>
   );
@@ -132,6 +209,9 @@ const validateData = (data) => {
   const errors = {};
 
   if (!data.name) errors.name = "Email is required";
+  if (!data.number) errors.number = "Number is required";
+  if (!data.category) errors.category = "Category is required";
+  if (!data.type) errors.type = "Type is required";
 
   return errors;
 };

@@ -1,16 +1,19 @@
 import { Button } from "react-native-paper";
 
-import { StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import React from "react";
 
 import { colors } from "../../constants";
 import Header from "../../components/header";
 import { TextInput } from "../../components/form";
+import { useFirebase } from "../../hooks";
 
-export default function EditFacilityScreen({ navigation }) {
+export default function EditFacilityScreen({ navigation, route }) {
+  const { facility } = route.params;
+  const { updateDocument } = useFirebase();
   const [data, setData] = React.useState({
-    name: "",
-    address: "",
+    name: facility.name,
+    address: facility.address,
   });
 
   const [errors, setErrors] = React.useState({});
@@ -22,6 +25,22 @@ export default function EditFacilityScreen({ navigation }) {
 
     setErrors(error);
     if (Object.keys(error).length > 0) return;
+
+    const res = await updateDocument(
+      "facilities",
+      facility.id,
+      data,
+      setLoading
+    );
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    Alert.alert("Success", "Facility updated successfully", [
+      {
+        text: "OK",
+        onPress: () => navigation.goBack(),
+      },
+    ]);
   };
 
   return (
@@ -61,7 +80,7 @@ export default function EditFacilityScreen({ navigation }) {
           loading={loading}
           disabled={loading}
         >
-          Add
+          Update
         </Button>
       </View>
       <View style={{ height: 100 }} />

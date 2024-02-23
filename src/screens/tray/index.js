@@ -1,26 +1,46 @@
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 
 import Container from "../../components/container";
 import Header from "../../components/header";
 import { colors } from "../../constants";
 import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
+import { useAuth, useFirebase } from "../../hooks";
+import { where } from "firebase/firestore";
 
 export default function TraysScreen({ navigation }) {
+  const { getDocuments } = useFirebase();
+  const { team } = useAuth();
   const [search, setSearch] = React.useState("");
+  const [categories, setCategories] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
 
   const filterData = React.useMemo(() => {
-    return MEDICAL_TRAY.filter((item) => {
-      return item.item.toLowerCase().includes(search.toLowerCase());
+    return categories.filter((item) => {
+      return item?.name?.toLowerCase().includes(search.toLowerCase());
     });
-  }, [search]);
+  }, [search, categories]);
+
+  useEffect(() => {
+    getCategories();
+  }, []);
+
+  const getCategories = async () => {
+    const res = await getDocuments("categories", setLoading, [
+      where("teamId", "==", team.id),
+    ]);
+
+    if (res?.error) return Alert.alert("Error", res.error);
+    setCategories(res.data);
+  };
 
   return (
     <Container>
@@ -59,7 +79,11 @@ export default function TraysScreen({ navigation }) {
               borderBottomWidth: 1,
               borderBottomColor: colors.lightGrey,
             }}
-            onPress={() => navigation.navigate(screens.trayType)}
+            onPress={() =>
+              navigation.navigate(screens.trayType, {
+                category: item.id,
+              })
+            }
           >
             <View>
               <Text
@@ -69,29 +93,16 @@ export default function TraysScreen({ navigation }) {
                   color: colors.grey,
                 }}
               >
-                {item.item}
+                {item.name}
               </Text>
             </View>
           </TouchableOpacity>
         )}
+        refreshing={loading}
+        onRefresh={getCategories}
       />
     </Container>
   );
 }
 
 const styles = StyleSheet.create({});
-
-const MEDICAL_TRAY = [
-  { item: "Knee" },
-  { item: "Hip" },
-  { item: "Trauma" },
-  { item: "Spine" },
-  { item: "Cranial" },
-  { item: "Maxillofacial" },
-  { item: "Neurosurgery" },
-  { item: "Cardiothoracic" },
-  { item: "Vascular" },
-  { item: "Orthopedic" },
-  { item: "Plastic" },
-  { item: "General" },
-];

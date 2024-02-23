@@ -1,3 +1,4 @@
 import { useAuth } from "./useAuth";
+import useFirebase from "./useFirebase";
 
-export { useAuth };
+export { useAuth, useFirebase };

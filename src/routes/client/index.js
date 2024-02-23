@@ -15,6 +15,8 @@ import TrayTypeScreen from "../../screens/tray/type";
 import ResultScreen from "../../screens/result";
 import AddTrayScreen from "../../screens/tray/add";
 import TrayDetailScreen from "../../screens/tray/detail";
+import UpdatePasswordScreen from "../../screens/general/password";
+import QRScannerScreen from "../../screens/qr";
 
 const Stack = createNativeStackNavigator();
 
@@ -69,6 +71,18 @@ export default function ClientStack() {
 
       <Stack.Screen name={screens.editProfile} component={EditProfileScreen} />
       <Stack.Screen name={screens.result} component={ResultScreen} />
+      <Stack.Screen
+        name={screens.updatePassword}
+        component={UpdatePasswordScreen}
+      />
+      <Stack.Screen
+        name={screens.qrScanner}
+        component={QRScannerScreen}
+        options={{
+          presentation: "modal",
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 }

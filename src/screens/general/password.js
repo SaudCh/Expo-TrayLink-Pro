@@ -1,12 +1,16 @@
 import { Button } from "react-native-paper";
 
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import React from "react";
 import { TextInput } from "../../components/form";
 import Container from "../../components/container";
 import Header from "../../components/header";
+import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
+import { auth } from "../../config/firebase";
+import { useAuth } from "../../hooks";
 
 export default function UpdatePasswordScreen({ navigation }) {
+  const { profile } = useAuth();
   const [data, setData] = React.useState({
     password: "",
     newPassword: "",
@@ -21,6 +25,30 @@ export default function UpdatePasswordScreen({ navigation }) {
 
     setErrors(error);
     if (Object.keys(error).length > 0) return;
+
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, profile.email, data.password)
+        .then((userCredential) => {
+          updatePassword(userCredential.user, data.newPassword)
+            .then(() => {
+              setLoading(false);
+              Alert.alert("Success", "Password updated successfully");
+              setData({ password: "", newPassword: "", confirmPassword: "" });
+            })
+            .catch((error) => {
+              throw new Error("Error updating password");
+            });
+        })
+        .catch((error) => {
+          throw new Error("Invalid password");
+        });
+    } catch (error) {
+      setLoading(false);
+      console.log("Error updating password: ", error);
+      Alert.alert("Error", error.message);
+    }
   };
 
   return (
@@ -32,7 +60,6 @@ export default function UpdatePasswordScreen({ navigation }) {
             label="Current Password"
             value={data.password}
             autoCapitalize={"none"}
-            secureTextEntry
             onChangeText={(text) => setData({ ...data, password: text })}
             error={errors.password}
             type={"password"}
@@ -42,7 +69,6 @@ export default function UpdatePasswordScreen({ navigation }) {
             label="New Password"
             value={data.newPassword}
             autoCapitalize={"none"}
-            secureTextEntry
             onChangeText={(text) => setData({ ...data, newPassword: text })}
             error={errors.newPassword}
             type={"password"}
@@ -52,7 +78,6 @@ export default function UpdatePasswordScreen({ navigation }) {
             label="Confirm Password"
             value={data.confirmPassword}
             autoCapitalize={"none"}
-            secureTextEntry
             onChangeText={(text) => setData({ ...data, confirmPassword: text })}
             error={errors.confirmPassword}
             type={"password"}

@@ -15,16 +15,25 @@ import React from "react";
 import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
 import { TextInput } from "../../components/form";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../config/firebase";
+import DecodeError from "../../utils/decodeError";
+import { useAuth, useFirebase } from "../../hooks";
+import { arrayUnion } from "firebase/firestore";
 
 export default function SignupScreen({ navigation }) {
+  const { login } = useAuth();
+  const { addDocument, addDocumentWithId, deleteDocument } = useFirebase();
+  const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState({
     name: "",
     email: "",
     phone: "",
-    username: "",
+    teamName: "",
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = React.useState({});
   const scrollRef = React.useRef();
 
   React.useEffect(() => {
@@ -39,6 +48,67 @@ export default function SignupScreen({ navigation }) {
       keyboardDidHideListener.remove();
     };
   }, []);
+
+  const setValue = (key, value) => {
+    setData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const signUp = async () => {
+    const errors = validate(data);
+    setErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      setLoading(true);
+      const user = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
+      const uid = user.user.uid;
+
+      const team = {
+        name: data.teamName,
+        members: arrayUnion(uid),
+      };
+
+      const res = await addDocument("teams", team);
+
+      if (res.error) {
+        user.user.delete();
+        Alert.alert("Error", res.error + ", rolling back changes");
+        setLoading(false);
+        return;
+      }
+
+      const profile = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        teamName: data.teamName,
+        role: "leader",
+        uid,
+        teamId: res.data.id,
+      };
+
+      const res2 = await addDocumentWithId("users", uid, profile);
+
+      if (res2.error) {
+        user.user.delete();
+        await deleteDocument("teams", res.data.id);
+        Alert.alert("Error", res2.error + ", rolling back changes");
+        setLoading(false);
+        return;
+      }
+
+      login(user.user);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      Alert.alert("Error", DecodeError(error.code));
+    }
+  };
 
   return (
     <React.Fragment>
@@ -87,7 +157,11 @@ export default function SignupScreen({ navigation }) {
           label="Name"
           placeholder="Name"
           value={data.name}
-          onChangeText={(val) => setData({ ...data, name: val })}
+          onChangeText={(val) => {
+            setValue("name", val);
+            required("name", val, setErrors, "Name");
+          }}
+          error={errors.name}
         />
 
         <TextInput
@@ -96,14 +170,22 @@ export default function SignupScreen({ navigation }) {
           keyboardType="email-address"
           autoCapitalize="none"
           value={data.email}
-          onChangeText={(val) => setData({ ...data, email: val })}
+          onChangeText={(val) => {
+            setValue("email", val);
+            email("email", val, setErrors);
+          }}
+          error={errors.email}
         />
 
         <TextInput
-          label="Username"
-          placeholder="Username"
-          value={data.username}
-          onChangeText={(val) => setData({ ...data, username: val })}
+          label="Team Name"
+          placeholder="Team Name"
+          value={data.teamName}
+          onChangeText={(val) => {
+            setValue("teamName", val);
+            required("teamName", val, setErrors, "Team Name");
+          }}
+          error={errors.teamName}
         />
 
         <TextInput
@@ -111,22 +193,34 @@ export default function SignupScreen({ navigation }) {
           placeholder="Phone Number"
           keyboardType="phone-pad"
           value={data.phone}
-          onChangeText={(val) => setData({ ...data, phone: val })}
+          onChangeText={(val) => {
+            setValue("phone", val);
+            required("phone", val, setErrors, "Phone Number", 10);
+          }}
+          error={errors.phone}
         />
         <TextInput
           label="Password"
           placeholder="Password"
           value={data.password}
-          onChangeText={(val) => setData({ ...data, password: val })}
+          onChangeText={(val) => {
+            setValue("password", val);
+            required("password", val, setErrors, "Password", 6);
+          }}
           type="password"
+          error={errors.password}
         />
 
         <TextInput
           label="Confirm Password"
           placeholder="Confirm Password"
           value={data.confirmPassword}
-          onChangeText={(val) => setData({ ...data, confirmPassword: val })}
+          onChangeText={(val) => {
+            setValue("confirmPassword", val);
+            required("confirmPassword", val, setErrors, "Confirm Password", 6);
+          }}
           type="password"
+          error={errors.confirmPassword}
         />
 
         <Button
@@ -135,7 +229,11 @@ export default function SignupScreen({ navigation }) {
             paddingVertical: 5,
             marginTop: 10,
           }}
-          onPress={() => Alert.alert("Sign up")}
+          onPress={() => {
+            signUp();
+          }}
+          loading={loading}
+          disabled={loading}
         >
           Create an account
         </Button>
@@ -145,6 +243,7 @@ export default function SignupScreen({ navigation }) {
             marginTop: 20,
           }}
           onPress={() => navigation.navigate(screens.login)}
+          disabled={loading}
         >
           <Text>
             Already have an account?
@@ -174,3 +273,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+const validate = (data) => {
+  const errors = {};
+
+  if (!data.name) errors.name = "Name is required";
+  if (!data.email) errors.email = "Email is required";
+  if (!data.teamName) errors.teamName = "Team Name is required";
+  if (!data.phone) errors.phone = "Phone Number is required";
+  if (!data.password) errors.password = "Password is required";
+  if (!data.confirmPassword)
+    errors.confirmPassword = "Confirm Password is required";
+  if (data.password !== data.confirmPassword)
+    errors.confirmPassword = "Password does not match";
+
+  return errors;
+};
+
+const required = (key, value, setErrors, label, min) => {
+  if (!value) setErrors((prev) => ({ ...prev, [key]: label + " is Required" }));
+  else if (min && value.length < min)
+    setErrors((prev) => ({
+      ...prev,
+      [key]: label + " must be at least " + min + " characters",
+    }));
+  else setErrors((prev) => ({ ...prev, [key]: "" }));
+};
+
+const email = (key, value, setErrors) => {
+  const emailRegex = /\S+@\S+\.\S+/;
+  if (!emailRegex.test(value))
+    setErrors((prev) => ({ ...prev, [key]: "Invalid Email" }));
+  else setErrors((prev) => ({ ...prev, [key]: "" }));
+};

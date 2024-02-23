@@ -1,4 +1,5 @@
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -12,19 +13,41 @@ import Header from "../../components/header";
 import { colors } from "../../constants";
 import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
+import { useAuth, useFirebase } from "../../hooks";
+import { where } from "firebase/firestore";
+import { useFocusEffect } from "@react-navigation/native";
 
-export default function TraysScreen({ navigation }) {
+export default function TraysScreen({ navigation, route }) {
+  const { getDocuments } = useFirebase();
+  const { team } = useAuth();
   const [search, setSearch] = React.useState("");
+  const [categories, setCategories] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
 
   const filterData = React.useMemo(() => {
-    return MEDICAL_TRAY.filter((item) => {
-      return item.item.toLowerCase().includes(search.toLowerCase());
+    return categories.filter((item) => {
+      return item?.name?.toLowerCase().includes(search.toLowerCase());
     });
-  }, [search]);
+  }, [search, categories]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      getCategories();
+    }, [])
+  );
+
+  const getCategories = async () => {
+    const res = await getDocuments("categories", setLoading, [
+      where("teamId", "==", team.id),
+    ]);
+
+    if (res?.error) return Alert.alert("Error", res.error);
+    setCategories(res.data);
+  };
 
   return (
     <Container>
-      <Header title={"Tray Category"} />
+      <Header title={"Tray Categories"} back={true} />
       <SearchBar
         value={search}
         onChangeText={(text) => setSearch(text)}
@@ -45,7 +68,12 @@ export default function TraysScreen({ navigation }) {
               borderBottomWidth: 1,
               borderBottomColor: colors.lightGrey,
             }}
-            onPress={() => navigation.navigate(screens.trayType)}
+            onPress={() =>
+              navigation.navigate(screens.trayType, {
+                category: item.id,
+                facility: route.params.facility,
+              })
+            }
           >
             <View>
               <Text
@@ -55,67 +83,16 @@ export default function TraysScreen({ navigation }) {
                   color: colors.grey,
                 }}
               >
-                {item.item}
+                {item.name}
               </Text>
             </View>
           </TouchableOpacity>
         )}
+        refreshing={loading}
+        onRefresh={getCategories}
       />
     </Container>
   );
 }
 
 const styles = StyleSheet.create({});
-
-const MEDICAL_TRAY = [
-  {
-    item: "Sterile Gloves",
-    quantity: 100,
-    expiryDate: "2024-12-31",
-  },
-  {
-    item: "Bandages",
-    quantity: 50,
-    expiryDate: "2024-10-15",
-  },
-  {
-    item: "Antiseptic Solution",
-    quantity: 200,
-    expiryDate: "2025-02-28",
-  },
-  {
-    item: "Disposable Syringes",
-    quantity: 75,
-    expiryDate: "2024-11-30",
-  },
-  {
-    item: "Painkillers",
-    quantity: 30,
-    expiryDate: "2024-09-20",
-  },
-  {
-    item: "First Aid Manual",
-    quantity: 10,
-    expiryDate: "N/A", // Assuming no expiry for manual
-  },
-  {
-    item: "Thermometer",
-    quantity: 5,
-    expiryDate: "N/A", // Assuming no expiry for thermometer
-  },
-  {
-    item: "Medical Masks",
-    quantity: 100,
-    expiryDate: "2024-11-15",
-  },
-  {
-    item: "Blood Pressure Cuff",
-    quantity: 15,
-    expiryDate: "N/A", // Assuming no expiry for cuff
-  },
-  {
-    item: "Medical Scissors",
-    quantity: 20,
-    expiryDate: "N/A", // Assuming no expiry for scissors
-  },
-];

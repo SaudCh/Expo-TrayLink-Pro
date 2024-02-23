@@ -1,13 +1,16 @@
 import { Button } from "react-native-paper";
 
-import { StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import React from "react";
 
 import { colors } from "../../constants";
 import Header from "../../components/header";
 import { TextInput } from "../../components/form";
+import { useAuth, useFirebase } from "../../hooks";
 
 export default function AddFacilityScreen({ navigation }) {
+  const { profile, team } = useAuth();
+  const { addDocument } = useFirebase();
   const [data, setData] = React.useState({
     name: "",
     address: "",
@@ -22,6 +25,25 @@ export default function AddFacilityScreen({ navigation }) {
 
     setErrors(error);
     if (Object.keys(error).length > 0) return;
+
+    const res = await addDocument(
+      "facilities",
+      {
+        ...data,
+        trays: [],
+        teamId: profile.teamId,
+      },
+      setLoading
+    );
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    Alert.alert("Success", "Facility added successfully", [
+      {
+        text: "OK",
+        onPress: () => navigation.goBack(),
+      },
+    ]);
   };
 
   return (

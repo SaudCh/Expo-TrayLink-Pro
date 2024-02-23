@@ -1,15 +1,76 @@
 import { Feather } from "@expo/vector-icons";
 
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import React from "react";
 
 import Modalize from "../modalize";
 import { colors } from "../../constants";
+import { useAuth, useFirebase } from "../../hooks";
 
-export default function SubcategoryModal({ mdlRef, onPress, selected }) {
+export default function SubcategoryModal({
+  mdlRef,
+  onPress,
+  selected,
+  getTypes,
+  types = [],
+  category,
+}) {
+  const { team } = useAuth();
+  const { updateDocument, addDocument, deleteDocument } = useFirebase();
+  const [loading, setLoading] = React.useState(false);
+
+  const editType = async (id, name) => {
+    if (!name) return Alert.alert("Error", "Type name is required");
+
+    const res = await updateDocument("types", id, { name: name }, setLoading);
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    setLoading(true);
+    await getTypes();
+    setLoading(false);
+  };
+
+  const addType = async (name) => {
+    if (!name) return Alert.alert("Error", "Type name is required");
+
+    const res = await addDocument(
+      "types",
+      {
+        name: name,
+        category: category,
+        teamId: team.id,
+      },
+      setLoading
+    );
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    setLoading(true);
+    await getTypes();
+    setLoading(false);
+  };
+
+  const deleteType = async (id) => {
+    const res = await deleteDocument("types", id, setLoading);
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    setLoading(true);
+    await getTypes();
+    setLoading(false);
+  };
+
   return (
     <Modalize bsref={mdlRef}>
-      {TRAY_TYPES.map((item, index) => (
+      {types.map((item, index) => (
         <TouchableOpacity
           style={{
             flexDirection: "row",
@@ -18,11 +79,10 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
             paddingVertical: 15,
             borderBottomWidth: 1,
             borderBottomColor: colors.lightGrey,
-            backgroundColor:
-              selected === item.item ? colors.lightGrey : "white",
+            backgroundColor: selected === item.id ? colors.lightGrey : "white",
           }}
           onPress={() => {
-            onPress(item.item);
+            onPress(item.id);
           }}
           key={index}
         >
@@ -34,7 +94,7 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
               flex: 1,
             }}
           >
-            {item.item}
+            {item.name}
           </Text>
           <TouchableOpacity
             onPress={() => {
@@ -50,12 +110,12 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
                   {
                     text: "OK",
                     onPress: (text) => {
-                      console.log({ text });
+                      editType(item.id, text);
                     },
                   },
                 ],
                 "plain-text",
-                item.item
+                item.name
               );
             }}
             style={{ marginRight: 10 }}
@@ -74,7 +134,9 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
                   },
                   {
                     text: "Yes",
-                    onPress: () => {},
+                    onPress: () => {
+                      deleteType(item.id);
+                    },
                   },
                 ]
               );
@@ -89,6 +151,9 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
           padding: 10,
           paddingVertical: 15,
           backgroundColor: "white",
+          flexDirection: "row",
+          justifyContent: "center",
+          alignItems: "center",
         }}
         onPress={() => {
           Alert.prompt(
@@ -103,7 +168,7 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
               {
                 text: "OK",
                 onPress: (text) => {
-                  console.log({ text });
+                  addType(text);
                 },
               },
             ],
@@ -111,6 +176,13 @@ export default function SubcategoryModal({ mdlRef, onPress, selected }) {
           );
         }}
       >
+        {loading && (
+          <ActivityIndicator
+            size="small"
+            color={colors.primary}
+            style={{ marginRight: 10 }}
+          />
+        )}
         <Text
           style={{
             fontSize: 14,

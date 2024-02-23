@@ -18,3 +18,14 @@ export const downloadFromUrl = async (url, setLoading) => {
   await shareAsync(fileUri);
   if (setLoading) setLoading(false);
 };
+
+export const downloadBase64 = async (base64, setLoading) => {
+  // download base64 in png format
+  const fileUri = FileSystem.documentDirectory + "file.png";
+  if (setLoading) setLoading(true);
+  await FileSystem.writeAsStringAsync(fileUri, base64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  await shareAsync(fileUri);
+  if (setLoading) setLoading(false);
+};

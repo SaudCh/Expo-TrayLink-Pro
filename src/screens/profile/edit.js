@@ -10,29 +10,42 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 
 import { getAvatarUrl } from "../../utils";
 import { colors } from "../../constants";
 import Container from "../../components/container";
 import Header from "../../components/header";
 import { screens } from "../../routes/screens";
-import { useAuth } from "../../hooks";
+import { useAuth, useFirebase } from "../../hooks";
 import { ButtonInput, TextInput } from "../../components/form";
+import { signOut } from "firebase/auth";
+import { auth } from "../../config/firebase";
 
 export default function EditProfileScreen({ navigation }) {
-  const { logout } = useAuth();
+  const { profile, logout, getProfile } = useAuth();
+  const { updateDocument, uploadImage } = useFirebase();
+
   const [data, setData] = React.useState({
-    name: "John Doe",
-    email: "john@gmail.com",
+    name: "",
+    email: "",
     phone: "",
-    username: "johndoe",
+    username: "",
   });
 
   const [errors, setErrors] = React.useState({});
   const [avatar, setAvatar] = React.useState(null);
 
   const [loading, setLoading] = React.useState(false);
+
+  useEffect(() => {
+    setData({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      teamName: profile.teamName,
+    });
+  }, []);
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -52,6 +65,48 @@ export default function EditProfileScreen({ navigation }) {
 
     setErrors(error);
     if (Object.keys(error).length > 0) return;
+
+    const avatarRes = avatar
+      ? await uploadImage(avatar, setLoading)
+      : {
+          status: 200,
+          data: profile.avatar || "",
+        };
+
+    const res = await updateDocument(
+      "users",
+      profile.id,
+      {
+        ...data,
+        avatar: avatarRes?.data,
+      },
+      setLoading
+    );
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    if (data.teamName !== profile.teamName) {
+      const teamRes = await updateDocument(
+        "teams",
+        profile.teamId,
+        {
+          name: data.teamName,
+        },
+        setLoading
+      );
+
+      if (teamRes?.error) return Alert.alert("Error", teamRes.error);
+    }
+
+    Alert.alert("Success", "Profile updated successfully");
+
+    getProfile(profile.id);
+  };
+
+  const handleLogout = () => {
+    signOut(auth).then(() => {
+      logout();
+    });
   };
 
   return (
@@ -85,7 +140,9 @@ export default function EditProfileScreen({ navigation }) {
             }}
           />
           <Image
-            source={avatar ? { uri: avatar?.uri } : getAvatarUrl("")}
+            source={
+              avatar ? { uri: avatar?.uri } : getAvatarUrl(profile.avatar)
+            }
             style={{ width: 80, height: 80, borderRadius: 50 }}
           />
           <TouchableOpacity style={styles.icon} onPress={pickAvatar}>
@@ -109,10 +166,10 @@ export default function EditProfileScreen({ navigation }) {
           />
 
           <TextInput
-            label="Username"
-            value={data.username}
-            onChangeText={(text) => setData({ ...data, username: text })}
-            error={errors.username}
+            label="Team Name"
+            value={data.teamName}
+            onChangeText={(text) => setData({ ...data, teamName: text })}
+            error={errors.teamName}
           />
 
           <TextInput
@@ -170,7 +227,7 @@ export default function EditProfileScreen({ navigation }) {
                   {
                     text: "OK",
                     onPress: () => {
-                      logout();
+                      handleLogout();
                     },
                   },
                 ],
@@ -223,9 +280,10 @@ export default function EditProfileScreen({ navigation }) {
 const validateData = (data) => {
   const errors = {};
 
-  if (!data.firstname) errors.firstname = "First name is required";
-  if (!data.lastname) errors.lastname = "Last name is required";
+  if (!data.name) errors.firstname = "Name is required";
   if (!data.email) errors.email = "Email is required";
+  if (!data.phone) errors.phone = "Phone number is required";
+  if (!data.teamName) errors.teamName = "Team name is required";
 
   return errors;
 };

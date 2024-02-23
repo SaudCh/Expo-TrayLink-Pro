@@ -1,4 +1,5 @@
 import {
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -12,15 +13,36 @@ import Header from "../../components/header";
 import { colors } from "../../constants";
 import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
+import { useAuth, useFirebase } from "../../hooks";
+import { where } from "firebase/firestore";
 
-export default function TraysScreen({ navigation }) {
+export default function TraysScreen({ navigation, route }) {
+  const { facility = "", category } = route.params;
+  const { team } = useAuth();
+  const { getDocuments } = useFirebase();
   const [search, setSearch] = React.useState("");
+  const [types, setTypes] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
 
   const filterData = React.useMemo(() => {
-    return MEDICAL_TRAY.filter((item) => {
-      return item.item.toLowerCase().includes(search.toLowerCase());
+    return types.filter((item) => {
+      return item?.name?.toLowerCase().includes(search.toLowerCase());
     });
-  }, [search]);
+  }, [search, types]);
+
+  React.useEffect(() => {
+    getTypes();
+  }, []);
+
+  const getTypes = async () => {
+    const res = await getDocuments("types", setLoading, [
+      where("category", "==", category),
+    ]);
+
+    if (res?.error) return Alert.alert("Error", res.error);
+
+    setTypes(res.data);
+  };
 
   return (
     <Container>
@@ -45,7 +67,13 @@ export default function TraysScreen({ navigation }) {
               borderBottomWidth: 1,
               borderBottomColor: colors.lightGrey,
             }}
-            onPress={() => navigation.navigate(screens.result)}
+            onPress={() =>
+              navigation.navigate(screens.result, {
+                facility,
+                category,
+                type: item.id,
+              })
+            }
           >
             <View>
               <Text
@@ -55,11 +83,13 @@ export default function TraysScreen({ navigation }) {
                   color: colors.grey,
                 }}
               >
-                {item.item}
+                {item.name}
               </Text>
             </View>
           </TouchableOpacity>
         )}
+        refreshing={loading}
+        onRefresh={getTypes}
       />
     </Container>
   );

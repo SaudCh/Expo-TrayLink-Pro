@@ -5,7 +5,7 @@ import ClientStack from "./client";
 import { useAuth } from "../hooks";
 
 export default function xAppNavigation() {
-  const { isLoggedIn = false } = useAuth();
+  const { isLoggedIn } = useAuth();
 
   return <>{isLoggedIn ? <ClientStack /> : <AuthRoutes />}</>;
 }

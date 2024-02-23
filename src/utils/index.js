@@ -1,5 +1,5 @@
-import { downloadFromUrl } from "./download";
+import { downloadFromUrl, downloadBase64 } from "./download";
 
 import { getAvatarUrl } from "./imageUrl";
 
-export { downloadFromUrl, getAvatarUrl };
+export { downloadFromUrl, downloadBase64, getAvatarUrl };

@@ -23,4 +23,6 @@ export const screens = {
   //
   editProfile: "EditProfileScreen",
   updatePassword: "UpdatePasswordScreen",
+  //
+  qrScanner: "QRScannerScreen",
 };
