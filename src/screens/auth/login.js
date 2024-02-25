@@ -94,12 +94,14 @@ export default function LoginScreen({ navigation }) {
         type="password"
         error={errors.password}
       />
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <CheckBoxInput
-          label="Remember me"
-          value={data.rememberMe}
-          onChange={(val) => setData({ ...data, rememberMe: val })}
-        />
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginBottom: 10,
+        }}
+      >
+        <View />
         <TouchableOpacity
           style={{
             alignSelf: "center",

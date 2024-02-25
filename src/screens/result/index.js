@@ -17,15 +17,15 @@ import SearchBar from "../../components/seachBar";
 import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
 import { useAuth, useFirebase } from "../../hooks";
+import EmptyData from "../../components/empty";
 
 export default function ResultScreen({ navigation, route }) {
-  console.log("route.params", route.params);
-
   const { facility = "", category, type } = route.params;
   const { team } = useAuth();
   const { getDocuments } = useFirebase();
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [trays, setTrays] = React.useState([]);
 
   const [categories, setCategories] = React.useState([]);
@@ -39,7 +39,10 @@ export default function ResultScreen({ navigation, route }) {
   }, [search, trays]);
 
   useEffect(() => {
-    getTrays();
+    if (team?.id) getTrays();
+  }, [team?.id]);
+
+  useEffect(() => {
     getCategories();
     getTypes();
     getFacilities();
@@ -91,6 +94,12 @@ export default function ResultScreen({ navigation, route }) {
     if (!id) return "N/A";
     const item = data.find((item) => item.id === id);
     return item?.name || "N/A";
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getTrays();
+    setRefreshing(false);
   };
 
   return (
@@ -159,13 +168,15 @@ export default function ResultScreen({ navigation, route }) {
             <Feather name="chevron-right" size={24} color={colors.grey} />
           </TouchableOpacity>
         )}
-        refreshing={loading}
-        onRefresh={() => {
-          getTrays();
-          getCategories();
-          getTypes();
-          getFacilities();
-        }}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <EmptyData
+            text="No tray found"
+            loading={loading}
+            onPress={handleRefresh}
+          />
+        }
       />
     </Container>
   );

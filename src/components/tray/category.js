@@ -3,6 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +14,7 @@ import React from "react";
 import Modalize from "../modalize";
 import { colors } from "../../constants";
 import { useAuth, useFirebase } from "../../hooks";
+import { fire } from "react-native-alertbox";
 
 export default function CategoryModal({
   mdlRef,
@@ -21,8 +23,8 @@ export default function CategoryModal({
   categories,
   getCategories,
 }) {
-  const { addDocument, updateDocument, deleteDocument } = useFirebase();
   const { team } = useAuth();
+  const { addDocument, updateDocument, deleteDocument } = useFirebase();
   const [loading, setLoading] = React.useState(false);
 
   const editCategory = async (id, name) => {
@@ -96,25 +98,51 @@ export default function CategoryModal({
           </Text>
           <TouchableOpacity
             onPress={() => {
-              Alert.prompt(
-                "Edit Category",
-                "Update category name",
-                [
-                  {
-                    text: "Cancel",
-                    onPress: () => {},
-                    style: "cancel",
-                  },
-                  {
-                    text: "OK",
-                    onPress: (text) => {
-                      editCategory(item.id, text);
+              if (Platform.OS === "ios") {
+                Alert.prompt(
+                  "Edit Category",
+                  "Update category name",
+                  [
+                    {
+                      text: "Cancel",
+                      onPress: () => {},
+                      style: "cancel",
                     },
-                  },
-                ],
-                "plain-text",
-                item.name
-              );
+                    {
+                      text: "OK",
+                      onPress: (text) => {
+                        editCategory(item.id, text);
+                      },
+                    },
+                  ],
+                  "plain-text",
+                  item.name
+                );
+              } else {
+                fire({
+                  title: "Edit Category",
+                  message: "Update category name",
+                  actions: [
+                    {
+                      text: "Cancel",
+                      onPress: () => {},
+                      style: "cancel",
+                    },
+                    {
+                      text: "OK",
+                      onPress: (data) => {
+                        editCategory(item.id, data.type);
+                      },
+                    },
+                  ],
+                  fields: [
+                    {
+                      name: "category",
+                      placeholder: item.name,
+                    },
+                  ],
+                });
+              }
             }}
             style={{ marginRight: 10 }}
           >
@@ -154,24 +182,50 @@ export default function CategoryModal({
           alignItems: "center",
         }}
         onPress={() => {
-          Alert.prompt(
-            "Add Category",
-            "Enter category name",
-            [
-              {
-                text: "Cancel",
-                onPress: () => {},
-                style: "cancel",
-              },
-              {
-                text: "OK",
-                onPress: (text) => {
-                  addCategory(text);
+          if (Platform.OS === "ios") {
+            Alert.prompt(
+              "Add Category",
+              "Enter category name",
+              [
+                {
+                  text: "Cancel",
+                  onPress: () => {},
+                  style: "cancel",
                 },
-              },
-            ],
-            "plain-text"
-          );
+                {
+                  text: "OK",
+                  onPress: (text) => {
+                    addCategory(text);
+                  },
+                },
+              ],
+              "plain-text"
+            );
+          } else {
+            fire({
+              title: "Add Category",
+              message: "Enter category name",
+              actions: [
+                {
+                  text: "Cancel",
+                  onPress: () => {},
+                  style: "cancel",
+                },
+                {
+                  text: "OK",
+                  onPress: (data) => {
+                    addCategory(data.category);
+                  },
+                },
+              ],
+              fields: [
+                {
+                  name: "category",
+                  placeholder: "Category name",
+                },
+              ],
+            });
+          }
         }}
       >
         {loading && <ActivityIndicator size="small" color={colors.primary} />}

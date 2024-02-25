@@ -3,6 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +14,7 @@ import React from "react";
 import Modalize from "../modalize";
 import { colors } from "../../constants";
 import { useAuth, useFirebase } from "../../hooks";
+import { fire } from "react-native-alertbox";
 
 export default function SubcategoryModal({
   mdlRef,
@@ -98,25 +100,51 @@ export default function SubcategoryModal({
           </Text>
           <TouchableOpacity
             onPress={() => {
-              Alert.prompt(
-                "Edit Type",
-                "Update type name",
-                [
-                  {
-                    text: "Cancel",
-                    onPress: () => {},
-                    style: "cancel",
-                  },
-                  {
-                    text: "OK",
-                    onPress: (text) => {
-                      editType(item.id, text);
+              if (Platform.OS === "ios") {
+                Alert.prompt(
+                  "Edit Type",
+                  "Update type name",
+                  [
+                    {
+                      text: "Cancel",
+                      onPress: () => {},
+                      style: "cancel",
                     },
-                  },
-                ],
-                "plain-text",
-                item.name
-              );
+                    {
+                      text: "OK",
+                      onPress: (text) => {
+                        editType(item.id, text);
+                      },
+                    },
+                  ],
+                  "plain-text",
+                  item.name
+                );
+              } else {
+                fire({
+                  title: "Edit Type",
+                  message: "Update type name",
+                  actions: [
+                    {
+                      text: "Cancel",
+                      onPress: () => {},
+                      style: "cancel",
+                    },
+                    {
+                      text: "OK",
+                      onPress: (data) => {
+                        editType(item.id, data.type);
+                      },
+                    },
+                  ],
+                  fields: [
+                    {
+                      name: "type",
+                      placeholder: item.name,
+                    },
+                  ],
+                });
+              }
             }}
             style={{ marginRight: 10 }}
           >
@@ -156,24 +184,50 @@ export default function SubcategoryModal({
           alignItems: "center",
         }}
         onPress={() => {
-          Alert.prompt(
-            "Add Type",
-            "Enter new type name",
-            [
-              {
-                text: "Cancel",
-                onPress: () => {},
-                style: "cancel",
-              },
-              {
-                text: "OK",
-                onPress: (text) => {
-                  addType(text);
+          if (Platform.OS === "ios") {
+            Alert.prompt(
+              "Add Type",
+              "Enter new type name",
+              [
+                {
+                  text: "Cancel",
+                  onPress: () => {},
+                  style: "cancel",
                 },
-              },
-            ],
-            "plain-text"
-          );
+                {
+                  text: "OK",
+                  onPress: (text) => {
+                    addType(text);
+                  },
+                },
+              ],
+              "plain-text"
+            );
+          } else {
+            fire({
+              title: "Add Type",
+              message: "Enter new type name",
+              actions: [
+                {
+                  text: "Cancel",
+                  onPress: () => {},
+                  style: "cancel",
+                },
+                {
+                  text: "OK",
+                  onPress: (data) => {
+                    addType(data.type);
+                  },
+                },
+              ],
+              fields: [
+                {
+                  name: "type",
+                  placeholder: "Type name",
+                },
+              ],
+            });
+          }
         }}
       >
         {loading && (
@@ -200,56 +254,3 @@ export default function SubcategoryModal({
 }
 
 const styles = StyleSheet.create({});
-
-const TRAY_TYPES = [
-  {
-    item: "Sterile Gloves",
-    quantity: 100,
-    expiryDate: "2024-12-31",
-  },
-  {
-    item: "Bandages",
-    quantity: 50,
-    expiryDate: "2024-10-15",
-  },
-  {
-    item: "Antiseptic Solution",
-    quantity: 200,
-    expiryDate: "2025-02-28",
-  },
-  {
-    item: "Disposable Syringes",
-    quantity: 75,
-    expiryDate: "2024-11-30",
-  },
-  {
-    item: "Painkillers",
-    quantity: 30,
-    expiryDate: "2024-09-20",
-  },
-  {
-    item: "First Aid Manual",
-    quantity: 10,
-    expiryDate: "N/A", // Assuming no expiry for manual
-  },
-  {
-    item: "Thermometer",
-    quantity: 5,
-    expiryDate: "N/A", // Assuming no expiry for thermometer
-  },
-  {
-    item: "Medical Masks",
-    quantity: 100,
-    expiryDate: "2024-11-15",
-  },
-  {
-    item: "Blood Pressure Cuff",
-    quantity: 15,
-    expiryDate: "N/A", // Assuming no expiry for cuff
-  },
-  {
-    item: "Medical Scissors",
-    quantity: 20,
-    expiryDate: "N/A", // Assuming no expiry for scissors
-  },
-];

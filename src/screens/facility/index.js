@@ -19,18 +19,20 @@ import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
 import SearchBar from "../../components/seachBar";
 import { useAuth, useFirebase } from "../../hooks";
+import EmptyData from "../../components/empty";
 
 export default function FacilityScreen({ navigation }) {
-  const { profile } = useAuth();
+  const { profile, team } = useAuth();
   const { getDocuments, deleteDocument } = useFirebase();
   const [search, setSearch] = React.useState("");
   const [facilities, setFacilities] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
-      getFacilities();
-    }, [])
+      if (team?.id) getFacilities();
+    }, [team?.id])
   );
 
   const filterData = useMemo(() => {
@@ -55,10 +57,16 @@ export default function FacilityScreen({ navigation }) {
 
   const getFacilities = async () => {
     const res = await getDocuments("facilities", setLoading, [
-      where("teamId", "==", profile.teamId),
+      where("teamId", "==", team.id),
     ]);
     if (res?.error) return Alert.alert("Error", res.error);
     setFacilities(res.data);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getFacilities();
+    setRefreshing(false);
   };
 
   return (
@@ -104,8 +112,15 @@ export default function FacilityScreen({ navigation }) {
             handlePress={handlePress}
           />
         )}
-        refreshing={loading}
-        onRefresh={getFacilities}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <EmptyData
+            text="No facility found"
+            loading={loading}
+            onPress={handleRefresh}
+          />
+        }
       />
     </Container>
   );

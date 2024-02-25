@@ -1,10 +1,8 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React, { useEffect } from "react";
+import React from "react";
 
 import Modalize from "../modalize";
 import { colors } from "../../constants";
-import { useAuth, useFirebase } from "../../hooks";
-import { where } from "firebase/firestore";
 
 export default function FacilityModal({
   mdlRef,
@@ -14,6 +12,28 @@ export default function FacilityModal({
 }) {
   return (
     <Modalize bsref={mdlRef}>
+      {facilities.length === 0 && (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+            height: 200,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "500",
+              textAlign: "center",
+              color: colors.primary,
+            }}
+          >
+            No facility found
+          </Text>
+        </View>
+      )}
       {facilities.map((item, index) => (
         <TouchableOpacity
           style={{

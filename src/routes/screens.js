@@ -25,4 +25,7 @@ export const screens = {
   updatePassword: "UpdatePasswordScreen",
   //
   qrScanner: "QRScannerScreen",
+  //
+  members: "MembersScreen",
+  invitation: "InvitationScreen",
 };

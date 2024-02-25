@@ -5,6 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import {
   Alert,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -19,12 +20,20 @@ import Header from "../../components/header";
 import { screens } from "../../routes/screens";
 import { useAuth, useFirebase } from "../../hooks";
 import { ButtonInput, TextInput } from "../../components/form";
-import { signOut } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  signOut,
+} from "firebase/auth";
 import { auth } from "../../config/firebase";
+import { arrayRemove, arrayUnion } from "firebase/firestore";
+import { fire } from "react-native-alertbox";
+import DecodeError from "../../utils/decodeError";
 
 export default function EditProfileScreen({ navigation }) {
-  const { profile, logout, getProfile } = useAuth();
-  const { updateDocument, uploadImage } = useFirebase();
+  const user = auth.currentUser;
+  const { profile, logout, getProfile, team } = useAuth();
+  const { updateDocument, uploadImage, deleteDocument } = useFirebase();
 
   const [data, setData] = React.useState({
     name: "",
@@ -109,6 +118,44 @@ export default function EditProfileScreen({ navigation }) {
     });
   };
 
+  const handleDelete = async (password) => {
+    console.log(password);
+    try {
+      setLoading(true);
+      const credential = EmailAuthProvider.credential(profile.email, password);
+
+      console.log(credential);
+
+      await reauthenticateWithCredential(user, credential);
+
+      if (!team?.id) throw new Error("An error occurred");
+
+      const res = await updateDocument("teams", team?.id, {
+        members: arrayRemove(profile.id),
+      });
+
+      if (res?.error) throw new Error("An error occurred");
+
+      const res2 = await updateDocument("users", profile.id, { teamId: "" });
+
+      if (res2?.error) {
+        await updateDocument("teams", team?.id, {
+          members: arrayUnion(profile.id),
+        });
+        throw new Error("An error occurred");
+      }
+
+      await user.delete().then(() => {
+        setLoading(false);
+        logout();
+      });
+    } catch (error) {
+      const errorCode = error.code;
+      Alert.alert("Error", DecodeError(errorCode));
+      setLoading(false);
+    }
+  };
+
   return (
     <Container>
       <Header title="Edit Profile" />
@@ -165,13 +212,14 @@ export default function EditProfileScreen({ navigation }) {
             disabled
           />
 
-          <TextInput
-            label="Team Name"
-            value={data.teamName}
-            onChangeText={(text) => setData({ ...data, teamName: text })}
-            error={errors.teamName}
-          />
-
+          {profile.role === "leader" && (
+            <TextInput
+              label="Team Name"
+              value={data.teamName}
+              onChangeText={(text) => setData({ ...data, teamName: text })}
+              error={errors.teamName}
+            />
+          )}
           <TextInput
             label="Phone"
             value={data.phone}
@@ -248,24 +296,51 @@ export default function EditProfileScreen({ navigation }) {
             }}
             textColor={colors.danger}
             onPress={() => {
-              Alert.alert(
-                "Delete Account",
-                "Are you sure you want to delete your account?",
-                [
-                  {
-                    text: "Cancel",
-                    onPress: () => console.log("Cancel Pressed"),
-                    style: "cancel",
-                  },
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      logout();
+              if (Platform.OS === "ios") {
+                Alert.prompt(
+                  "Delete Account",
+                  "Enter your password to delete your account",
+                  [
+                    {
+                      text: "Cancel",
+                      onPress: () => console.log("Cancel Pressed"),
+                      style: "cancel",
                     },
-                  },
-                ],
-                { cancelable: false }
-              );
+                    {
+                      text: "OK",
+                      onPress: (password) => {
+                        handleDelete(password);
+                      },
+                    },
+                  ],
+                  "secure-text"
+                );
+              } else {
+                fire({
+                  title: "Delete Account",
+                  message: "Enter your password to delete your account",
+                  actions: [
+                    {
+                      text: "Cancel",
+                      style: "cancel",
+                    },
+                    {
+                      text: "OK",
+                      onPress: (data) => {
+                        handleDelete(data.password);
+                      },
+                    },
+                  ],
+                  fields: [
+                    {
+                      name: "password",
+                      label: "Password",
+                      placeholder: "Enter your password",
+                      secureTextEntry: true,
+                    },
+                  ],
+                });
+              }
             }}
           >
             Delete Account

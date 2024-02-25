@@ -7,9 +7,10 @@ import { colors } from "../../constants";
 import Header from "../../components/header";
 import { TextInput } from "../../components/form";
 import { useAuth, useFirebase } from "../../hooks";
+import Container from "../../components/container";
 
 export default function AddFacilityScreen({ navigation }) {
-  const { profile, team } = useAuth();
+  const { team } = useAuth();
   const { addDocument } = useFirebase();
   const [data, setData] = React.useState({
     name: "",
@@ -17,7 +18,6 @@ export default function AddFacilityScreen({ navigation }) {
   });
 
   const [errors, setErrors] = React.useState({});
-
   const [loading, setLoading] = React.useState(false);
 
   const handleSubmit = async () => {
@@ -31,7 +31,7 @@ export default function AddFacilityScreen({ navigation }) {
       {
         ...data,
         trays: [],
-        teamId: profile.teamId,
+        teamId: team.id,
       },
       setLoading
     );
@@ -47,13 +47,7 @@ export default function AddFacilityScreen({ navigation }) {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.white,
-        padding: 10,
-      }}
-    >
+    <Container modal={true}>
       <Header title="Add Facility" />
 
       <View style={{ padding: 10 }}>
@@ -87,7 +81,7 @@ export default function AddFacilityScreen({ navigation }) {
         </Button>
       </View>
       <View style={{ height: 100 }} />
-    </View>
+    </Container>
   );
 }
 

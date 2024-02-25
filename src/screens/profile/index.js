@@ -11,7 +11,7 @@ import { screens } from "../../routes/screens";
 import { useAuth } from "../../hooks";
 
 export default function ProfileDetailScreen({ navigation }) {
-  const { profile } = useAuth();
+  const { profile, team } = useAuth();
 
   return (
     <Container>
@@ -45,15 +45,17 @@ export default function ProfileDetailScreen({ navigation }) {
       >
         {profile?.name}
       </Text>
-      <Text
-        style={{
-          fontSize: 16,
-          color: colors.grey,
-          textAlign: "center",
-        }}
-      >
-        @{profile?.teamName}
-      </Text>
+      {team?.name && (
+        <Text
+          style={{
+            fontSize: 16,
+            color: colors.grey,
+            textAlign: "center",
+          }}
+        >
+          @{team?.name}
+        </Text>
+      )}
 
       {/* email, phone number */}
       <View

@@ -2,10 +2,12 @@ import { Button } from "react-native-paper";
 import { Entypo } from "@expo/vector-icons";
 
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../../constants";
 import { TextInput } from "../../components/form";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../config/firebase";
 
 export default function ForgetPasswordScreen({ navigation }) {
   const [data, setData] = React.useState({
@@ -13,6 +15,24 @@ export default function ForgetPasswordScreen({ navigation }) {
     password: "",
     rememberMe: false,
   });
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSubmit = async () => {
+    if (!data.email) return Alert.alert("Error", "Email is required");
+
+    setLoading(true);
+    await sendPasswordResetEmail(auth, data.email)
+      .then(() => {
+        Alert.alert("Success", "Password reset email sent successfully");
+        navigation.goBack();
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        Alert.alert("Error", errorCode);
+        setLoading(false);
+      })
+      .finally(() => setLoading(false));
+  };
 
   return (
     <View
@@ -67,10 +87,12 @@ export default function ForgetPasswordScreen({ navigation }) {
 
       <Button
         mode="contained"
-        // onPress={() => navigation.navigate(screens.signup)}
+        onPress={() => handleSubmit()}
         style={{
           paddingVertical: 5,
         }}
+        loading={loading}
+        disabled={loading}
       >
         Send Email
       </Button>

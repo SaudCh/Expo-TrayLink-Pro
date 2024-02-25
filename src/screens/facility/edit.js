@@ -17,7 +17,6 @@ export default function EditFacilityScreen({ navigation, route }) {
   });
 
   const [errors, setErrors] = React.useState({});
-
   const [loading, setLoading] = React.useState(false);
 
   const handleSubmit = async () => {

@@ -5,11 +5,18 @@ import React from "react";
 import { TextInput } from "../../components/form";
 import Container from "../../components/container";
 import Header from "../../components/header";
-import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  signInWithEmailAndPassword,
+  updatePassword,
+} from "firebase/auth";
 import { auth } from "../../config/firebase";
 import { useAuth } from "../../hooks";
+import DecodeError from "../../utils/decodeError";
 
 export default function UpdatePasswordScreen({ navigation }) {
+  const user = auth.currentUser;
   const { profile } = useAuth();
   const [data, setData] = React.useState({
     password: "",
@@ -29,25 +36,26 @@ export default function UpdatePasswordScreen({ navigation }) {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, profile.email, data.password)
-        .then((userCredential) => {
-          updatePassword(userCredential.user, data.newPassword)
-            .then(() => {
-              setLoading(false);
-              Alert.alert("Success", "Password updated successfully");
-              setData({ password: "", newPassword: "", confirmPassword: "" });
-            })
-            .catch((error) => {
-              throw new Error("Error updating password");
-            });
+      const credential = EmailAuthProvider.credential(
+        profile.email,
+        data.password
+      );
+
+      await reauthenticateWithCredential(user, credential);
+
+      await updatePassword(user, data.newPassword)
+        .then(() => {
+          setLoading(false);
+          Alert.alert("Success", "Password updated successfully");
+          setData({ password: "", newPassword: "", confirmPassword: "" });
         })
         .catch((error) => {
-          throw new Error("Invalid password");
+          throw new Error("Error updating password");
         });
     } catch (error) {
       setLoading(false);
-      console.log("Error updating password: ", error);
-      Alert.alert("Error", error.message);
+      const errorCode = error.code;
+      Alert.alert("Error", DecodeError(errorCode));
     }
   };
 

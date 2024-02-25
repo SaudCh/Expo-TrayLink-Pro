@@ -1,3 +1,5 @@
+import { where } from "firebase/firestore";
+
 import {
   Alert,
   FlatList,
@@ -13,16 +15,18 @@ import Header from "../../components/header";
 import { colors } from "../../constants";
 import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
-import { useAuth, useFirebase } from "../../hooks";
-import { where } from "firebase/firestore";
+import { useFirebase } from "../../hooks";
+import EmptyData from "../../components/empty";
 
 export default function TraysScreen({ navigation, route }) {
   const { facility = "", category } = route.params;
-  const { team } = useAuth();
+
   const { getDocuments } = useFirebase();
+
   const [search, setSearch] = React.useState("");
   const [types, setTypes] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const filterData = React.useMemo(() => {
     return types.filter((item) => {
@@ -42,6 +46,12 @@ export default function TraysScreen({ navigation, route }) {
     if (res?.error) return Alert.alert("Error", res.error);
 
     setTypes(res.data);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getTypes();
+    setRefreshing(false);
   };
 
   return (
@@ -88,64 +98,18 @@ export default function TraysScreen({ navigation, route }) {
             </View>
           </TouchableOpacity>
         )}
-        refreshing={loading}
-        onRefresh={getTypes}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <EmptyData
+            text="No tray type found"
+            loading={loading}
+            onPress={handleRefresh}
+          />
+        }
       />
     </Container>
   );
 }
 
 const styles = StyleSheet.create({});
-
-const MEDICAL_TRAY = [
-  {
-    item: "Sterile Gloves",
-    quantity: 100,
-    expiryDate: "2024-12-31",
-  },
-  {
-    item: "Bandages",
-    quantity: 50,
-    expiryDate: "2024-10-15",
-  },
-  {
-    item: "Antiseptic Solution",
-    quantity: 200,
-    expiryDate: "2025-02-28",
-  },
-  {
-    item: "Disposable Syringes",
-    quantity: 75,
-    expiryDate: "2024-11-30",
-  },
-  {
-    item: "Painkillers",
-    quantity: 30,
-    expiryDate: "2024-09-20",
-  },
-  {
-    item: "First Aid Manual",
-    quantity: 10,
-    expiryDate: "N/A", // Assuming no expiry for manual
-  },
-  {
-    item: "Thermometer",
-    quantity: 5,
-    expiryDate: "N/A", // Assuming no expiry for thermometer
-  },
-  {
-    item: "Medical Masks",
-    quantity: 100,
-    expiryDate: "2024-11-15",
-  },
-  {
-    item: "Blood Pressure Cuff",
-    quantity: 15,
-    expiryDate: "N/A", // Assuming no expiry for cuff
-  },
-  {
-    item: "Medical Scissors",
-    quantity: 20,
-    expiryDate: "N/A", // Assuming no expiry for scissors
-  },
-];

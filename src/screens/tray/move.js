@@ -19,10 +19,10 @@ import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
 import { useAuth, useFirebase } from "../../hooks";
 import { useFocusEffect } from "@react-navigation/native";
+import EmptyData from "../../components/empty";
 
 export default function ResultScreen({ navigation, route }) {
   const { team } = useAuth();
-  console.log("team", team);
   const { getDocuments } = useFirebase();
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -91,6 +91,12 @@ export default function ResultScreen({ navigation, route }) {
     if (!id) return "N/A";
     const item = data.find((item) => item.id === id);
     return item?.name || "N/A";
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getTrays();
+    setRefreshing(false);
   };
 
   return (
@@ -177,14 +183,14 @@ export default function ResultScreen({ navigation, route }) {
           </TouchableOpacity>
         )}
         refreshing={refreshing}
-        onRefresh={() => {
-          setRefreshing(true);
-          getTrays();
-          getCategories();
-          getTypes();
-          getFacilities();
-          setRefreshing(false);
-        }}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          <EmptyData
+            text="No tray found"
+            loading={loading}
+            onPress={handleRefresh}
+          />
+        }
       />
     </Container>
   );

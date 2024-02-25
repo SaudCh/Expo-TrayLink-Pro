@@ -16,13 +16,15 @@ import { downloadBase64 } from "../../utils";
 
 export default function AddTrayScreen({ navigation, route }) {
   const { id } = route.params;
+
+  const qrRef = React.useRef();
   const categoryRef = React.useRef();
   const typeRef = React.useRef();
   const facilityRef = React.useRef();
 
+  const { team } = useAuth();
   const { getDocuments, updateDocument, getReferece, getDocumentById } =
     useFirebase();
-  const { team } = useAuth();
 
   const [data, setData] = React.useState({
     email: "",
@@ -32,12 +34,12 @@ export default function AddTrayScreen({ navigation, route }) {
     facility: "",
   });
 
-  const qrRef = React.useRef();
-  const [errors, setErrors] = React.useState({});
-  const [loading, setLoading] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
   const [types, setTypes] = React.useState([]);
   const [facilities, setFacilities] = React.useState([]);
+
+  const [errors, setErrors] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
 
   useEffect(() => {
     getCategories();
@@ -112,11 +114,22 @@ export default function AddTrayScreen({ navigation, route }) {
   const getTray = async () => {
     const res = await getDocumentById("trays", id);
     if (res?.error) return Alert.alert("Error", res.error);
+
+    if (res?.data?.teamId !== team.id) {
+      return Alert.alert("Error", "You are not authorized to view this tray", [
+        {
+          text: "Go back",
+          onPress: () => {
+            navigation.goBack();
+          },
+        },
+      ]);
+    }
+
     setData(res.data);
   };
 
   const saveQRCode = async () => {
-    // save QR Code in gallery
     qrRef.current.toDataURL((data) => {
       downloadBase64(data, setLoading);
     });
@@ -130,11 +143,11 @@ export default function AddTrayScreen({ navigation, route }) {
         <View style={{ alignItems: "center" }}>
           <QRCode
             getRef={(ref) => (qrRef.current = ref)}
-            value={"https://trylinkpro.com/TrayDetailScreen/" + id}
-            // value={"trylinkpro://details/" + id}
+            value={"https://trylinkpro.com/trayDetails/" + id}
             size={150}
             color="black"
             backgroundColor="white"
+            // add js object to the qr code
           />
         </View>
         <TextInput
@@ -254,6 +267,10 @@ const validateData = (data) => {
   const errors = {};
 
   if (!data.name) errors.name = "Email is required";
+  if (!data.number) errors.number = "Number is required";
+  if (!data.category) errors.category = "Category is required";
+  if (!data.type) errors.type = "Type is required";
+  if (!data.facility) errors.facility = "Facility is required";
 
   return errors;
 };

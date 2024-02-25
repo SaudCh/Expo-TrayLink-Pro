@@ -48,12 +48,7 @@ export default function useFirebase() {
     }
   };
 
-  const getDocuments = async (
-    colName,
-    setLoading,
-    where = [],
-    references = []
-  ) => {
+  const getDocuments = async (colName, setLoading, where = []) => {
     try {
       if (setLoading) setLoading(true);
 

@@ -1,21 +1,3 @@
-// import { initializeApp } from "firebase/app";
-// import { getFirestore } from "firebase/firestore";
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyDgUTS3yHVN8ZykNSzK4cAu3pmClNUNhrQ",
-//   authDomain: "traylink-pro.firebaseapp.com",
-//   projectId: "traylink-pro",
-//   storageBucket: "traylink-pro.appspot.com",
-//   messagingSenderId: "497617122642",
-//   appId: "1:497617122642:web:38c64b198e54f23444f68b",
-//   measurementId: "G-GLVXLHWMBM",
-// };
-
-// const app = initializeApp(firebaseConfig);
-// const db = getFirestore(app);
-
-// export default app;
-
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";

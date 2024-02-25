@@ -16,13 +16,17 @@ import { screens } from "../../routes/screens";
 import { useAuth, useFirebase } from "../../hooks";
 import { where } from "firebase/firestore";
 import { useFocusEffect } from "@react-navigation/native";
+import EmptyData from "../../components/empty";
 
 export default function TraysScreen({ navigation, route }) {
   const { getDocuments } = useFirebase();
   const { team } = useAuth();
+
   const [search, setSearch] = React.useState("");
   const [categories, setCategories] = React.useState([]);
+
   const [loading, setLoading] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const filterData = React.useMemo(() => {
     return categories.filter((item) => {
@@ -32,8 +36,8 @@ export default function TraysScreen({ navigation, route }) {
 
   useFocusEffect(
     React.useCallback(() => {
-      getCategories();
-    }, [])
+      if (team?.id) getCategories();
+    }, [team?.id])
   );
 
   const getCategories = async () => {
@@ -43,6 +47,12 @@ export default function TraysScreen({ navigation, route }) {
 
     if (res?.error) return Alert.alert("Error", res.error);
     setCategories(res.data);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getCategories();
+    setRefreshing(false);
   };
 
   return (
@@ -88,8 +98,15 @@ export default function TraysScreen({ navigation, route }) {
             </View>
           </TouchableOpacity>
         )}
-        refreshing={loading}
+        refreshing={refreshing}
         onRefresh={getCategories}
+        ListEmptyComponent={
+          <EmptyData
+            text={"No Tray Category found"}
+            loading={loading}
+            onPress={handleRefresh}
+          />
+        }
       />
     </Container>
   );

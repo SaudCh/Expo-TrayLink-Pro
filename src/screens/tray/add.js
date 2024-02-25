@@ -17,8 +17,8 @@ export default function AddTrayScreen({ navigation }) {
   const typeRef = React.useRef();
   const facilityRef = React.useRef();
 
-  const { getDocuments, addDocument, getReferece } = useFirebase();
   const { team } = useAuth();
+  const { getDocuments, addDocument, getReferece } = useFirebase();
 
   const [data, setData] = React.useState({
     email: "",
@@ -27,13 +27,12 @@ export default function AddTrayScreen({ navigation }) {
     type: "",
     facility: "",
   });
-
-  const [errors, setErrors] = React.useState({});
-
-  const [loading, setLoading] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
   const [types, setTypes] = React.useState([]);
   const [facilities, setFacilities] = React.useState([]);
+
+  const [errors, setErrors] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
 
   useEffect(() => {
     getCategories();

@@ -1,8 +1,22 @@
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import React from "react";
 
-export default function Container({ children, cusStyles }) {
-  return <View style={[containerStyles.container, cusStyles]}>{children}</View>;
+export default function Container({ children, cusStyles, modal = false }) {
+  return (
+    <View
+      style={[
+        containerStyles.container,
+        modal
+          ? { paddingTop: Platform.OS === "ios" ? 10 : 30 }
+          : {
+              paddingTop: Platform.OS === "ios" ? 48 : 30,
+            },
+        cusStyles,
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
 export const containerStyles = StyleSheet.create({
@@ -10,6 +24,5 @@ export const containerStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     padding: 7,
-    paddingTop: 48,
   },
 });

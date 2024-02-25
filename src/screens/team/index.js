@@ -1,61 +1,35 @@
-import { Feather } from "@expo/vector-icons";
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 
 import {
-  Alert,
-  FlatList,
-  Image,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  StyleSheet,
+  Platform,
 } from "react-native";
-import React, { useEffect, useMemo } from "react";
 
-import Container from "../../components/container";
-import Header from "../../components/header";
 import { colors } from "../../constants";
-import SearchBar from "../../components/seachBar";
 import { screens } from "../../routes/screens";
-import { useAuth, useFirebase } from "../../hooks";
+import Header from "../../components/header";
+import MembersScreen from "./team";
+import InvitationScreen from "./invitation";
+import { useAuth } from "../../hooks";
 
-export default function FacilityScreen({ navigation }) {
-  const { team, profile } = useAuth();
-  const { getDocuments } = useFirebase();
-  const [search, setSearch] = React.useState("");
-  const [teams, setTeams] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
+const Tab = createMaterialTopTabNavigator();
 
-  useEffect(() => {
-    getFacilities();
-  }, []);
-
-  const filterData = useMemo(() => {
-    return teams.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(search.toLowerCase()) ||
-        item.email.toLowerCase().includes(search.toLowerCase())
-      );
-    });
-  }, [search, teams]);
-
-  const handleDelete = (index) => {
-    const newData = [...teams];
-    newData.splice(index, 1);
-    setTeams(newData);
-  };
-
-  const getFacilities = async () => {
-    await getDocuments("facilities", setLoading).then((res) => {
-      if (res?.error) return Alert.alert("Error", res.error);
-      setTeams(res.data);
-    });
-  };
-
+function CustomTabBar({ state, descriptors, navigation, profile, team }) {
   return (
-    <Container>
+    <View
+      style={{
+        backgroundColor: "#fff",
+        paddingTop: Platform.OS === "ios" ? 48 : 30,
+        paddingBottom: 10,
+        paddingHorizontal: 10,
+      }}
+    >
       <Header
-        title={team?.name}
         back={false}
+        title={team?.name}
         headerRight={() =>
           profile?.role === "leader" ? (
             <TouchableOpacity
@@ -74,140 +48,103 @@ export default function FacilityScreen({ navigation }) {
           ) : null
         }
       />
+      <View style={styles.container}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const label = options.tabBarLabel;
 
-      <SearchBar
-        value={search}
-        onChangeText={(text) => setSearch(text)}
-        placeholder="Search Team"
-        width="90%"
-        cusStyles={{ marginVertical: 10 }}
-      />
-      <FlatList
-        data={filterData}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 10,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.grey,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View
-                style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 25,
-                  backgroundColor: colors.grey,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                {item.avatar ? (
-                  <Image
-                    source={{ uri: item.avatar }}
-                    style={{ width: 50, height: 50, borderRadius: 25 }}
-                  />
-                ) : (
-                  <Text style={{ fontSize: 20, color: colors.white }}>
-                    {item.name.charAt(0)}
-                  </Text>
-                )}
-              </View>
-              <View style={{ marginLeft: 10, flex: 1 }}>
-                <Text style={{ fontSize: 16, color: colors.primary }}>
-                  {item.name}
-                </Text>
-                <Text style={{ color: colors.grey }}>{item.email}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "Are you sure?",
-                    "You want to delete this team member?",
-                    [
-                      {
-                        text: "No",
-                        onPress: () => {},
-                      },
-                      {
-                        text: "Yes",
-                        onPress: () => handleDelete(index),
-                      },
-                    ]
-                  );
-                }}
-              >
-                <Feather name="trash-2" size={18} color={colors.danger} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      />
-    </Container>
+          const isFocused = state.index === index;
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              style={[
+                styles.tabButton,
+                {
+                  width: "50%",
+                  backgroundColor: isFocused
+                    ? colors.primaryLight
+                    : "#ffffff00",
+                },
+              ]}
+              onPress={onPress}
+            >
+              <Text style={[styles.tabText, { color: colors.primary }]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({});
+export default function MyTeamScreen() {
+  const { profile, team } = useAuth();
 
-const TEAMS = [
-  {
-    name: "John Doe",
-    avatar: "https://i.pravatar.cc/300",
-    email: "john@gmail.com",
-    phone: "1234567890",
+  return (
+    <Tab.Navigator
+      tabBar={(props) => (
+        <CustomTabBar {...props} profile={profile} team={team} />
+      )}
+    >
+      <Tab.Screen
+        name={screens.members}
+        component={MembersScreen}
+        options={{
+          tabBarLabel: "Team Members",
+        }}
+      />
+      <Tab.Screen
+        name={screens.invitation}
+        component={InvitationScreen}
+        options={{
+          tabBarLabel: "Invitations",
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    backgroundColor: "white",
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "rgba(0,0,0,0.1)",
+    paddingHorizontal: 10,
+    marginHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: 10,
   },
-  {
-    name: "Jane Smith",
-    email: "jane@gmail.com",
-    phone: "9876543210",
+  tabButton: {
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 5,
   },
-  {
-    name: "Bob Johnson",
-    avatar: "https://i.pravatar.cc/300",
-    email: "bob@gmail.com",
-    phone: "5555555555",
+  tabText: {
+    fontSize: 13,
   },
-  {
-    name: "Alice Williams",
-    email: "alice@gmail.com",
-    phone: "1112223333",
+  appName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    margin: 10,
+    marginHorizontal: 20,
+    color: colors.primary,
   },
-  {
-    name: "Eva Brown",
-    avatar: "https://i.pravatar.cc/300",
-    email: "eva@gmail.com",
-    phone: "9998887777",
-  },
-  {
-    name: "Michael Davis",
-    email: "michael@gmail.com",
-    phone: "4443332222",
-  },
-  {
-    name: "Olivia Taylor",
-    avatar: "https://i.pravatar.cc/300",
-    email: "olivia@gmail.com",
-    phone: "7776665555",
-  },
-  {
-    name: "Ryan Miller",
-    email: "ryan@gmail.com",
-    phone: "3334445555",
-  },
-  {
-    name: "Sophia Wilson",
-    avatar: "https://i.pravatar.cc/300",
-    email: "sophia@gmail.com",
-    phone: "6667778888",
-  },
-  {
-    name: "David Anderson",
-    email: "david@gmail.com",
-    phone: "2223334444",
-  },
-];
+});
