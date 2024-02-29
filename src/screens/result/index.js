@@ -18,11 +18,13 @@ import { colors } from "../../constants";
 import { screens } from "../../routes/screens";
 import { useAuth, useFirebase } from "../../hooks";
 import EmptyData from "../../components/empty";
+import { Button } from "react-native-paper";
+import MoveFacilityModal from "../../components/tray/moveFacility";
 
 export default function ResultScreen({ navigation, route }) {
   const { facility = "", category, type } = route.params;
   const { team } = useAuth();
-  const { getDocuments } = useFirebase();
+  const { getDocuments, updateDocument } = useFirebase();
   const [search, setSearch] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -32,9 +34,16 @@ export default function ResultScreen({ navigation, route }) {
   const [types, setTypes] = React.useState([]);
   const [facilities, setFacilities] = React.useState([]);
 
+  const facilityRef = React.useRef();
+  const [selected, setSelected] = React.useState([]);
+  const [isSelect, setIsSelect] = React.useState(false);
+
   const filterData = React.useMemo(() => {
     return trays.filter((item) => {
-      return item.name.toLowerCase().includes(search.toLowerCase());
+      return (
+        item.name.toLowerCase().includes(search.toLowerCase()) ||
+        item.number.toLowerCase().includes(search.toLowerCase())
+      );
     });
   }, [search, trays]);
 
@@ -102,6 +111,29 @@ export default function ResultScreen({ navigation, route }) {
     setRefreshing(false);
   };
 
+  const moveArray = async (selected, facilityId) => {
+    facilityRef.current?.close();
+    for (let i = 0; i < selected.length; i++) {
+      const tray = trays.find((item) => item.id === selected[i]);
+      if (!tray) continue;
+      const res = await updateDocument(
+        "trays",
+        tray.id,
+        {
+          facility: facilityId,
+        },
+        setLoading
+      );
+      if (res?.error) return Alert.alert("Error", res.error);
+
+      if (i === selected.length - 1) {
+        setIsSelect(false);
+        setSelected([]);
+        handleRefresh();
+      }
+    }
+  };
+
   return (
     <Container>
       <Header title={"Tray"} />
@@ -127,6 +159,19 @@ export default function ResultScreen({ navigation, route }) {
               alignItems: "center",
             }}
             onPress={() => {
+              if (isSelect) {
+                if (selected.includes(item.id)) {
+                  setSelected((prev) => prev.filter((id) => id !== item.id));
+                  if (selected.length === 1) setIsSelect(false);
+                  return;
+                } else {
+                  setSelected((prev) => [...prev, item.id]);
+                  return;
+                }
+
+                return;
+              }
+
               navigation.navigate(screens.trayDetail, {
                 id: item.id,
                 name: item.name,
@@ -134,6 +179,17 @@ export default function ResultScreen({ navigation, route }) {
                 category: item.category,
                 type: item.type,
                 facility: item.facility,
+              });
+            }}
+            onLongPress={() => {
+              if (isSelect) return;
+
+              setIsSelect(true);
+              setSelected((prev) => {
+                if (prev.includes(item.id)) {
+                  return prev.filter((id) => id !== item.id);
+                }
+                return [...prev, item.id];
               });
             }}
           >
@@ -165,7 +221,15 @@ export default function ResultScreen({ navigation, route }) {
                 {getName(item.facility, facilities)}
               </Text>
             </View>
-            <Feather name="chevron-right" size={24} color={colors.grey} />
+            {isSelect ? (
+              <Feather
+                name={selected.includes(item.id) ? "check" : "circle"}
+                size={16}
+                color={colors.primary}
+              />
+            ) : (
+              <Feather name="chevron-right" size={24} color={colors.grey} />
+            )}
           </TouchableOpacity>
         )}
         refreshing={refreshing}
@@ -177,6 +241,85 @@ export default function ResultScreen({ navigation, route }) {
             onPress={handleRefresh}
           />
         }
+      />
+      {isSelect && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 20,
+            width: "100%",
+            flexDirection: "row",
+            justifyContent: "space-evenly",
+            alignItems: "center",
+          }}
+        >
+          <Button
+            mode="contained"
+            onPress={() => {
+              setIsSelect(false);
+              setSelected([]);
+            }}
+            style={{
+              width: "40%",
+            }}
+            buttonColor={colors.primaryLight}
+            textColor={colors.primary}
+            disabled={loading}
+            loading={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            mode="contained"
+            onPress={() => {
+              if (selected.length === 0) {
+                setIsSelect(false);
+                return;
+              }
+              facilityRef.current?.open();
+              // setIsSelect(false);
+              // setSelected([]);
+            }}
+            style={{
+              width: "40%",
+            }}
+            loading={loading}
+            disabled={loading}
+          >
+            Move
+          </Button>
+        </View>
+      )}
+      <MoveFacilityModal
+        mdlRef={facilityRef}
+        onPress={(id) => {
+          console.log(id);
+          console.log(selected);
+          const facilityName = getName(id, facilities);
+          Alert.alert(
+            "Move",
+            "Are you sure you want to move " +
+              selected.length +
+              " tray(s) to facility " +
+              facilityName +
+              "?",
+            [
+              {
+                text: "Cancel",
+                onPress: () => console.log("Cancel Pressed"),
+                style: "cancel",
+              },
+              {
+                text: "OK",
+                onPress: async () => {
+                  moveArray(selected, id);
+                },
+              },
+            ]
+          );
+        }}
+        // selected={selected}
+        facilities={facilities}
       />
     </Container>
   );

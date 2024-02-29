@@ -116,6 +116,7 @@ export default function MembersScreen({ navigation }) {
             handleDelete={(id) => handleDelete(id)}
             leader={profile?.role === "leader"}
             makeAdmin={(id) => makeAdmin(id)}
+            uid={profile?.uid}
           />
         )}
         ListEmptyComponent={() => (
@@ -134,7 +135,7 @@ export default function MembersScreen({ navigation }) {
 
 const styles = StyleSheet.create({});
 
-const Card = ({ item, handleDelete, leader, makeAdmin }) => {
+const Card = ({ item, handleDelete, leader, makeAdmin, uid }) => {
   return (
     <TouchableOpacity
       style={{
@@ -145,7 +146,7 @@ const Card = ({ item, handleDelete, leader, makeAdmin }) => {
         borderBottomWidth: 1,
         borderBottomColor: colors.grey,
       }}
-      disabled={!leader}
+      disabled={!leader || item.id === uid}
       onLongPress={() => {
         // make admin
         if (item.role === "leader")
@@ -190,7 +191,7 @@ const Card = ({ item, handleDelete, leader, makeAdmin }) => {
           </Text>
           <Text style={{ color: colors.grey }}>{item.email}</Text>
         </View>
-        {leader && (
+        {leader && item.id !== uid && (
           <TouchableOpacity
             onPress={() => {
               Alert.alert(
