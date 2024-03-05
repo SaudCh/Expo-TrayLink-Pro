@@ -10,7 +10,15 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env":{
+        "EXPO_PUBLIC_API_URL":"https://react-tray-link-pro.vercel.app/"
+      },
+      "autoIncrement": true
+    }
   },
   "submit": {
     "production": {}
