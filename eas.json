@@ -21,6 +21,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "rchris5407@yahoo.com",
+        "ascAppId": "6478985439"
+      }
+    }
   }
 }

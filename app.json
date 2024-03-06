@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ios.coach",
+      "bundleIdentifier": "com.ios.traylinkpro",
       "buildNumber": "1.0.0",
       "infoPlist": {
         "NSCameraUsageDescription": "The app accesses your camera to let you scan QR codes.",
