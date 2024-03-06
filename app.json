@@ -19,8 +19,8 @@
       "bundleIdentifier": "com.ios.coach",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "NSCameraUsageDescription": "The app accesses your camera to let you take photos to share with your friends.",
-        "NSPhotoLibraryUsageDescription": "The app accesses your photos to let you share them with your friends."
+        "NSCameraUsageDescription": "The app accesses your camera to let you scan QR codes.",
+        "NSPhotoLibraryUsageDescription": "The app accesses your photos to let you set them as your profile picture."
       }
     },
     "android": {
@@ -28,9 +28,6 @@
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#29B6F6"
       },
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ],
       "package": "com.android.traylinkpro"
     },
     "web": {
@@ -46,13 +43,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them with your friends."
+          "photosPermission": "Allow TrayLink Pro to access your photos to let you set them as your profile picture."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow TrayLink Pro to access your camera."
+          "cameraPermission": "Allow TrayLink Pro to access your camera to scan QR codes."
         }
       ]
     ],
